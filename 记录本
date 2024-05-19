@@ -1,0 +1,17 @@
+114-5424011-1522668 第一次批量邀请时，该单没被邀请，但是被打上邀请标识了（未解决）
+访问链接：https://sellercentral.amazon.com/orders-v3/ref=xx_myo_dnav_xx?sort=order_date_desc&date-range=1713855600000-1713941999000&page=2
+
+
+
+页面显示id为xo4qbGo795，但实际order id为S01-6059960-6334868，导致被邀请的单，进入到邀请队列（未解决）
+https://sellercentral.amazon.com/orders-v3/ref=xx_myo_dnav_xx?sort=order_date_desc&date-range=1714114800000-1714201199000&page=2
+
+
+
+订单日期在5-30天内，但是提醒【您不能使用此功能请求在订单送达日期后5-30天范围之外的评论。】（未解决）
+https://sellercentral.amazon.com/messaging/reviews?orderId=112-0046932-5961062&marketplaceId=ATVPDKIKX0DER
+
+
+
+问题：noInviteOrderIds是该批次所有不需要邀请的订单号（已解决）
+解决方案：点击邀请按钮式，删除非本页的不需要邀请orderId

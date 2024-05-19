@@ -1,0 +1,71 @@
+{
+  "name": "邀评工具",
+  "description": "亚马逊邀评工具",
+  "version": "1.0",
+  "manifest_version": 3,
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "webNavigation",
+    "webRequest",
+    "storage",
+    "tabs",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://sellercentral.amazon.com/orders-v3/*"
+  ],
+  "action": {
+    "default_icon": {
+      "16": "images/amu16.png",
+      "32": "images/amu32.png",
+      "48": "images/amu48.png",
+      "128": "images/amu128.png"
+    }
+  },
+  "icons": {
+    "16": "images/amu16.png",
+    "32": "images/amu32.png",
+    "48": "images/amu48.png",
+    "128": "images/amu128.png"
+  },
+  "web_accessible_resources": [{
+    "resources": ["resources/js/injectedAjax.js"],
+    "matches": ["<all_urls>"]
+  }],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://sellercentral.amazon.com/orders-v3/*",
+        "https://sellercentral.amazon.com/orders-v3/*"
+      ],
+      "js": [
+        "injected.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "http://sellercentral.amazon.com/orders-v3/*",
+        "https://sellercentral.amazon.com/orders-v3/*"
+      ],
+      "js": [
+        "order.js"
+      ],
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "http://sellercentral.amazon.com/messaging/reviews*",
+        "https://sellercentral.amazon.com/messaging/reviews*"
+      ],
+      "js": [
+        "messagingReviews.js"
+      ],
+      "run_at": "document_end"
+    }
+  ]
+}

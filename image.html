@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blue Letters in Red Box</title>
+    <style>
+      body,
+      html {
+        height: 100%;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .red-box {
+        width: 256px;
+        height: 256px;
+        background-color: yellow;
+        display: flex;
+        flex-direction: column; /* 垂直排列 */
+        justify-content: center; /* 垂直居中 */
+        align-items: center; /* 水平居中 */
+        color: red; /* 将字体颜色改为蓝色 */
+        font-size: 64px; /* 增大字体大小 */
+        font-weight: bold;
+        text-transform: uppercase; /* 将文字转换为大写 */
+        letter-spacing: 0.2em; /* 增加字母间距 */
+      }
+
+      .centered-text {
+        text-align: center; /* 文字水平居中 */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="red-box">
+      <div class="centered-text">A M</div>
+      <div class="centered-text">U</div>
+    </div>
+  </body>
+</html>
