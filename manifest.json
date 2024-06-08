@@ -19,6 +19,7 @@
     "http://sellercentral.amazon.com/orders-v3/*"
   ],
   "action": {
+    "default_popup": "popup.html",
     "default_icon": {
       "16": "images/amu16.png",
       "32": "images/amu32.png",

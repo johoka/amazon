@@ -15,3 +15,12 @@ https://sellercentral.amazon.com/messaging/reviews?orderId=112-0046932-5961062&m
 
 问题：noInviteOrderIds是该批次所有不需要邀请的订单号（已解决）
 解决方案：点击邀请按钮式，删除非本页的不需要邀请orderId
+
+
+
+
+# 设置HTTP代理
+git config --global http.proxy http://<proxy_username>:<proxy_password>@<proxy_host>:<proxy_port>
+ 
+# 设置HTTPS代理
+git config --global https.proxy https://<proxy_username>:<proxy_password>@<proxy_host>:<proxy_port>

@@ -94,28 +94,29 @@ chrome.runtime.onMessage.addListener(async function (
           console.error("chrome.storage.local.get" + chrome.runtime.lastError);
           return;
         }
+        let orderIdArray = result[storageKey];
         // 如果不存在数据或者数据为空，则设置一个空数组到本地存储中
-        if (!result[storageKey] || result[storageKey].length === 0) {
-          result[storageKey] = [];
+        if (!orderIdArray || orderIdArray.length === 0) {
+          orderIdArray = [];
         }
-        result[storageKey].push(orderId);
-        chrome.storage.local.set(
-          { orderIdArray: result[storageKey] },
-          function () {
-            if (chrome.runtime.lastError) {
-              console.error(
-                "chrome.storage.local.set" + chrome.runtime.lastError
-              );
-            } else {
-              chrome.tabs.sendMessage(parentTabId, {
-                action: "invitedSuccessfully",
-                orderId: orderId,
-              });
-            }
-            //释放锁
-            getInvitedOrderIdLock = false;
+        if (orderIdArray.length >= 5000) {
+          orderIdArray.shift();
+        }
+        orderIdArray.push(orderId);
+        chrome.storage.local.set({ orderIdArray: orderIdArray }, function () {
+          if (chrome.runtime.lastError) {
+            console.error(
+              "chrome.storage.local.set" + chrome.runtime.lastError
+            );
+          } else {
+            chrome.tabs.sendMessage(parentTabId, {
+              action: "invitedSuccessfully",
+              orderId: orderId,
+            });
           }
-        );
+          //释放锁
+          getInvitedOrderIdLock = false;
+        });
       });
     }
   } else if (request.action == "invitedFail") {
@@ -137,6 +138,15 @@ chrome.runtime.onMessage.addListener(async function (
         orderId: orderId,
       });
     }
+  } else if (request.action == "outOfRange") {
+    //您不能使用此功能请求在订单送达日期后5-30天范围之外的评论。
+    chrome.tabs.remove(sender.tab.id);
+    let orderId = request.orderId;
+    let parentTabId = request.parentTabId;
+    chrome.tabs.sendMessage(parentTabId, {
+      action: "outOfRange",
+      orderId: orderId,
+    });
   }
   // 为了在异步响应完成后发送响应，返回 true
   return true;

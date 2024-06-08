@@ -13,7 +13,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       !alreadyInvited &&
       loopCount < 30
     ) {
-      debugger;
       loopCount = loopCount + 1;
 
       //确认邀请评论
@@ -24,7 +23,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         confirmButton = confirmButton.shadowRoot.querySelector("button");
         if (confirmButton) {
           // alert("找到是按钮了");
-          confirmButton.click();
+          // confirmButton.click();
 
           loopCount = 0;
           while (loopCount < 35) {
@@ -65,8 +64,18 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
             orderId: orderId,
             parentTabId: message.parentTabId,
           });
+        } else if (
+          textContent ==
+          "您不能使用此功能请求在订单送达日期后5-30天范围之外的评论。"
+        ) {
+          chrome.runtime.sendMessage({
+            action: "outOfRange",
+            orderId: orderId,
+            parentTabId: message.parentTabId,
+          });
         }
       }
+
       await sleep(1000);
     }
   }

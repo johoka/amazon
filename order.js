@@ -56,6 +56,15 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         orderIds.push(message.orderId);
         console.log("超时，tab数减1，orderId is " + message.orderId);
       }
+    } else if (message.action == "outOfRange") {
+      //范围外，暂时放在不邀请队列中
+      console.log(`${message.orderId}不在邀请范围内`);
+      if (subTabNum > 0) {
+        subTabNum--;
+      }
+      let orderId = message.orderId;
+      let orderLink = orderMap.get(orderId);
+      addNoRangeFlag(orderLink, orderId);
     }
   }
 });
@@ -79,14 +88,21 @@ window.onload = function () {
           nextPageAction(inviteCommentButton);
           return;
         }
-        // let notCurrentPageOrderIdSet = Array.from(noInviteOrderIds).filter(
-        //   (item) => !orderMap.get(item)
-        // );
-
-        // notCurrentPageOrderIdSet.forEach((item) => {
-        //   //删除非当前页的订单号id
-        //   noInviteOrderIds.delete(item);
-        // });
+        let setMaxTabs = false;
+        let maxTabs = 3;
+        chrome.storage.local.get("maxTabs", function (result) {
+          if (chrome.runtime.lastError) {
+          } else {
+            maxTabs = result.maxTabs;
+          }
+          setMaxTabs = true;
+        });
+        while (!setMaxTabs) {
+          console.info("等待获取同时邀请订单数");
+          await sleep(1000);
+        }
+        // alert(`同时邀请订单数：${maxTabs}`);
+        console.log(`同时邀请订单数：${maxTabs}`);
 
         let finalinvitedOrderIdSet = new Set();
         while (true) {
@@ -126,7 +142,7 @@ window.onload = function () {
             //invitedOrderIds.size是变化的
             //没有获取到订单号，但是需要邀请的数量大于已经邀请的数量，等待继续
             //存在超时邀请的订单号还没返回状态
-            alert("存在没有邀请的订单，请重新点击邀请评论按钮");
+            console.log("存在没有邀请的订单，请重新点击邀请评论按钮");
             //重新检测订单是否邀请
             let finalinvItedOrderIdArray = Array.from(finalinvitedOrderIdSet);
             finalinvItedOrderIdArray.forEach((item) => {
@@ -158,7 +174,7 @@ window.onload = function () {
                 //循环了多次，但是subTabNum一直不小于3，此时将subTabNum设置为0
                 subTabNum = 0;
               }
-              if (subTabNum < 3) {
+              if (subTabNum < maxTabs) {
                 chrome.runtime.sendMessage(
                   {
                     action: "openNewTab",
@@ -281,6 +297,29 @@ function addInvitedFlag(orderLink, orderId) {
       `;
     //orderlink添加标识，用于标记不需要邀请
     orderLink.setAttribute("yiyaoqing", "yiyaoqing");
+    orderLink.insertAdjacentHTML("afterend", invitedSuccessfullySpan);
+  }
+}
+
+//已经邀请
+function addNoRangeFlag(orderLink, orderId) {
+  if (noInviteOrderIds.has(orderId)) {
+    return;
+  }
+  noInviteOrderIds.add(orderId);
+  if (orderLink) {
+    let noRangeSpan = orderLink.getAttribute("noRange");
+    if (noRangeSpan) {
+      //已经存在【范围外】标志，不需要重复添加
+      return;
+    }
+    let invitedSuccessfullySpan = `
+      <span style="color:blue;">
+          范围外
+      </span>
+      `;
+    //orderlink添加标识，用于标记不需要邀请
+    orderLink.setAttribute("noRange", "noRange");
     orderLink.insertAdjacentHTML("afterend", invitedSuccessfullySpan);
   }
 }
