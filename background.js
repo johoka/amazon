@@ -128,16 +128,17 @@ chrome.runtime.onMessage.addListener(async function (
       //记录失败标识
     }
   } else if (request.action == "noInvite") {
-    let tab = sender.tab;
-    if (tab) {
-      chrome.tabs.remove(sender.tab.id);
-      let orderId = request.orderId;
-      let parentTabId = request.parentTabId;
-      chrome.tabs.sendMessage(parentTabId, {
-        action: "invitedSuccessfully",
-        orderId: orderId,
-      });
-    }
+    console.log("noInvite");
+    // let tab = sender.tab;
+    // if (tab) {
+    //   chrome.tabs.remove(sender.tab.id);
+    //   let orderId = request.orderId;
+    //   let parentTabId = request.parentTabId;
+    //   chrome.tabs.sendMessage(parentTabId, {
+    //     action: "invitedSuccessfully",
+    //     orderId: orderId,
+    //   });
+    // }
   } else if (request.action == "outOfRange") {
     //您不能使用此功能请求在订单送达日期后5-30天范围之外的评论。
     chrome.tabs.remove(sender.tab.id);

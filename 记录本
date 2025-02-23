@@ -1,5 +1,6 @@
 114-5424011-1522668 第一次批量邀请时，该单没被邀请，但是被打上邀请标识了（未解决）
 访问链接：https://sellercentral.amazon.com/orders-v3/ref=xx_myo_dnav_xx?sort=order_date_desc&date-range=1713855600000-1713941999000&page=2
+解决方案：可能是亚马逊bug，已经被邀请了，但是还可以被重新邀请（待确认？？？）
 
 
 

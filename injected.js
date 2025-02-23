@@ -12,7 +12,8 @@ window.addEventListener("message", async function (e) {
   let data = e.data.data;
   if (type == "errorMsg") {
     console.error("content script received", type, data);
-  } else {
-    console.log("content script received:", type, data);
   }
+  // else {
+  //   console.log("content script received:", type, data);
+  // }
 });

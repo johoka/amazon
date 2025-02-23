@@ -23,7 +23,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         confirmButton = confirmButton.shadowRoot.querySelector("button");
         if (confirmButton) {
           // alert("找到是按钮了");
-          // confirmButton.click();
+          confirmButton.click();
 
           loopCount = 0;
           while (loopCount < 35) {
@@ -76,7 +76,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         }
       }
 
-      await sleep(1000);
+      await sleep(500);
     }
   }
 });

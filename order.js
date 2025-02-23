@@ -93,7 +93,7 @@ window.onload = function () {
         chrome.storage.local.get("maxTabs", function (result) {
           if (chrome.runtime.lastError) {
           } else {
-            maxTabs = result.maxTabs;
+            maxTabs = result.maxTabs || 5;
           }
           setMaxTabs = true;
         });
@@ -106,7 +106,7 @@ window.onload = function () {
 
         let finalinvitedOrderIdSet = new Set();
         while (true) {
-          console.log(orderIds);
+          // console.log(orderIds);
           let orderId = orderIds.shift();
           if (!orderId) {
             //没有获取到订单号，等待一会儿，因为存在超时邀请的订单号还没返回状态
@@ -122,9 +122,6 @@ window.onload = function () {
             }
             finalinvitedOrderIdSet.add(orderId);
           }
-          // console.log(
-          //   `当前页需要邀请数量：${finalinvitedOrderIdSet.size}，已经邀请数量：${invitedOrderIds.size}`
-          // );
           console.log(
             `当前页需要总数：${orderMap.size}，不邀请数量：${noInviteOrderIds.size}`
           );
@@ -200,9 +197,7 @@ window.onload = function () {
             //有，添加到orderLinks
             //没有，翻页，查询下一批次
             //暂时break
-            if (orderId) {
-              alert(`没找到${orderId}元素，点击刷新按钮重试`);
-            }
+            console.log(`没找到${orderId}元素，点击刷新按钮重试`);
             refreshButton();
             continue;
           }
