@@ -21,6 +21,7 @@
 
 (function () {
   let origFetch = window.fetch;
+  //todo 为什么刷新页面时，同样的请求有时可以拦截有时拦截不到？？？？？？
   window.fetch = async function (...args) {
     console.log("fetch request:", args);
     let requestUrl = args[0];
@@ -58,7 +59,9 @@
         .clone()
         .json()
         .then((data) => {
+          //没有费用或没有完成付款的订单号
           let noFeeAmazonOrderIds = [];
+          //没有费用或没有完成付款的订单号
           let noFeeOrderIds = [];
           let orders = data.orders;
           for (let index = 0; index < orders.length; index++) {
@@ -69,7 +72,13 @@
             //付款金额对象
             let unitPrice = orderItem.unitPrice;
             if (unitPrice && unitPrice.Amount > 0) {
-              //费用不为0的单
+              if (order.orderFulfillmentStatus != "PaymentComplete") {
+                //没有付款完成的订单
+                let amazonOrderId = order.amazonOrderId;
+                noFeeAmazonOrderIds.push(amazonOrderId);
+                let sellerOrderId = order.sellerOrderId;
+                noFeeOrderIds.push(sellerOrderId);
+              }
             } else {
               //没有费用或费用为0的单
               let amazonOrderId = order.amazonOrderId;
@@ -78,6 +87,7 @@
               noFeeOrderIds.push(sellerOrderId);
             }
           }
+          console.log("不邀请订单：" + JSON.stringify(noFeeOrderIds));
           window.postMessage(
             {
               type: "noFeeOrderIds",

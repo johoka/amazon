@@ -9,7 +9,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     let loopCount = 0;
     while (
       !confirmButton &&
-      !invitedSuccessfully &&
+      !invitedSuccessfully && 
       !alreadyInvited &&
       loopCount < 30
     ) {
@@ -74,7 +74,27 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
             parentTabId: message.parentTabId,
           });
         }
+        break;
       }
+
+      //不能邀请（请单击此处重试）
+      disabledStateRetryText = document.querySelector(
+        ".disabled-state-retry-text"
+      );
+      if(disabledStateRetryText){
+        let textContent = disabledStateRetryText.textContent
+        if(textContent == "请单击此处重试"){
+          //todo 暂时给范围外的标识
+          chrome.runtime.sendMessage({
+            action: "outOfRange",
+            orderId: orderId,
+            parentTabId: message.parentTabId,
+          });
+        }
+        break;
+      }
+
+      
 
       await sleep(500);
     }

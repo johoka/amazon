@@ -175,9 +175,10 @@ window.onload = function () {
                 chrome.runtime.sendMessage(
                   {
                     action: "openNewTab",
-                    url:
-                      "https://sellercentral.amazon.com" +
-                      orderLink.getAttribute("href"),
+                    //订单详情页面，然后通过订单详情页面跳转到邀评页面
+                    // url: "https://sellercentral.amazon.com" + orderLink.getAttribute("href"),
+                    //直接跳转到邀评页面（省去跳转到订单详情页面中间步骤）
+                    url: `https://sellercentral.amazon.com/messaging/reviews?orderId=${orderId}&marketplaceId=ATVPDKIKX0DER`,
                     orderId: orderId,
                     active: false,
                   },
