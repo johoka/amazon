@@ -24,30 +24,27 @@ chrome.runtime.onMessage.addListener(async function (
     chrome.tabs.create({ url: url, active: request.active }, function (tab) {
       // 回应content.js
       sendResponse({ status: "Tab opened", tabId: tab.id });
-      // 测试 URL
-      // url = "https://sellercentral.amazon.com/orders-v3/order/111-4279826-6069030";
 
-      // 使用字符串分割方法 split，以 "/" 作为分隔符，获取最后一部分
-      // let parts = url.split("/");
-      // let orderId = parts[parts.length - 1];
       let timeout = setTimeout(function () {
         //超时关闭标签
         orderTimeOutMap.delete(orderId);
+        // 移除监听器，避免内存泄漏
+        chrome.tabs.onUpdated.removeListener(updateListener);
         chrome.tabs.remove(tab.id, function () {
           subTabTimeOutClosedFunction(sender.tab.id, orderId);
         });
       }, 40 * 1000);
       orderTimeOutMap.set(orderId, timeout);
 
-      // 监听标签页加载状态的变化
-      chrome.tabs.onUpdated.addListener(function (
-        tabId,
-        changeInfo,
-        updatedTab
-      ) {
+      // 修复：创建命名的监听器函数，以便稍后可以移除
+      const updateListener = function (tabId, changeInfo, updatedTab) {
         if (tabId === tab.id && changeInfo.status === "loading") {
+          // 加载中，无需处理
         } else if (tabId === tab.id && changeInfo.status === "complete") {
           // 确保是目标标签页加载完成
+          // 立即移除此监听器，避免多次触发和内存泄漏
+          chrome.tabs.onUpdated.removeListener(updateListener);
+
           // 向目标标签页发送消息
           chrome.tabs.sendMessage(tab.id, {
             startInvite: true,
@@ -55,7 +52,10 @@ chrome.runtime.onMessage.addListener(async function (
             parentTabId: sender.tab.id,
           });
         }
-      });
+      };
+
+      // 添加监听器
+      chrome.tabs.onUpdated.addListener(updateListener);
     });
   } else if (request.action == "updateTab") {
     let tab = sender.tab;

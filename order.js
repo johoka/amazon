@@ -92,18 +92,13 @@ window.onload = function () {
           nextPageAction(inviteCommentButton);
           return;
         }
-        let setMaxTabs = false;
-        let maxTabs = 3;
-        chrome.storage.local.get("maxTabs", function (result) {
-          if (chrome.runtime.lastError) {
-          } else {
-            maxTabs = result.maxTabs || 5;
-          }
-          setMaxTabs = true;
-        });
-        while (!setMaxTabs) {
-          console.info("等待获取同时邀请订单数");
-          await sleep(1000);
+        // 修复：使用Promise包装chrome.storage.get，避免竞态条件
+        let maxTabs = 5; // 默认值
+        try {
+          const result = await getMaxTabsAsync();
+          maxTabs = result;
+        } catch (error) {
+          console.error('获取maxTabs失败，使用默认值5:', error);
         }
         // alert(`同时邀请订单数：${maxTabs}`);
         console.log(`同时邀请订单数：${maxTabs}`);
@@ -483,4 +478,19 @@ function difference(arr1, arr2) {
 // 定义一个 sleep 函数，接受一个延迟时间（以毫秒为单位）作为参数
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// 获取最大标签页数 - Promise版本，修复竞态条件
+function getMaxTabsAsync() {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get('maxTabs', (result) => {
+      if (chrome.runtime.lastError) {
+        console.error('获取maxTabs出错:', chrome.runtime.lastError);
+        reject(chrome.runtime.lastError);
+      } else {
+        const maxTabs = result.maxTabs || 5;
+        resolve(maxTabs);
+      }
+    });
+  });
 }

@@ -1,102 +1,76 @@
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message && message.startInvite) {
-    // 获取当前标签页的 URL
-    var currentUrl = window.location.href;
-    var orderId = getParameterByName("orderId", currentUrl);
-    let confirmButton;
-    let invitedSuccessfully;
-    let alreadyInvited;
-    let loopCount = 0;
-    while (
-      !confirmButton &&
-      !invitedSuccessfully && 
-      !alreadyInvited &&
-      loopCount < 30
-    ) {
-      loopCount = loopCount + 1;
+    const orderId = getParameterByName("orderId", window.location.href);
 
-      //确认邀请评论
-      confirmButton = document.querySelector(
-        '#ayb-reviews > div > kat-button[label="是"]'
-      );
-      if (confirmButton) {
-        confirmButton = confirmButton.shadowRoot.querySelector("button");
-        if (confirmButton) {
-          // alert("找到是按钮了");
-          confirmButton.click();
+    try {
+      // 方法1: 等待确认按钮
+      const confirmResult = await waitForAnyElement([
+        '#ayb-reviews > div > kat-button[label="是"]',
+        'kat-button[label*="是"]',
+      ]);
 
-          loopCount = 0;
-          while (loopCount < 35) {
-            loopCount = loopCount + 1;
-            //点击确认邀请后，成功返回的标识
-            invitedSuccessfully = document.querySelector(
-              "#ayb-reviews > div > kat-alert[variant='success']"
+      if (confirmResult) {
+        const button = confirmResult.element.shadowRoot?.querySelector("button");
+        if (button) {
+          button.click();
+
+          // 等待成功提示
+          try {
+            await waitForElement(
+              '#ayb-reviews > div > kat-alert[variant="success"]',
+              35000
             );
-            if (invitedSuccessfully) {
-              //发送成功事件
-              chrome.runtime.sendMessage({
-                action: "invitedSuccessfully",
-                orderId: orderId,
-                parentTabId: message.parentTabId,
-              });
-            }
-            await sleep(1000);
+            sendMessage("invitedSuccessfully", orderId, message.parentTabId);
+            return;
+          } catch (error) {
+            // 没有看到成功提示，可能是由于其他原因
+            console.warn("未检测到成功提示:", error.message);
+            sendMessage("invitedFail", orderId, message.parentTabId);
+            return;
           }
-          //发送邀请失败事件
-          chrome.runtime.sendMessage({
-            action: "invitedFail",
-            orderId: orderId,
-            parentTabId: message.parentTabId,
-          });
-          break;
         }
       }
 
-      //已经邀请评论，返回关闭页签
-      alreadyInvited = document.querySelector(
-        ".ayb-request-review-error-description"
-      );
+      // 方法2: 检查是否已邀请或其他错误状态
+      const alreadyInvited = await waitForElement(
+        ".ayb-request-review-error-description",
+        5000
+      ).catch(() => null);
+
       if (alreadyInvited) {
-        let textContent = alreadyInvited.textContent;
-        if (textContent == "您已请求对此订单进行评论。") {
-          chrome.runtime.sendMessage({
-            action: "invitedSuccessfully",
-            orderId: orderId,
-            parentTabId: message.parentTabId,
-          });
-        } else if (
-          textContent ==
-          "您不能使用此功能请求在订单送达日期后5-30天范围之外的评论。"
-        ) {
-          chrome.runtime.sendMessage({
-            action: "outOfRange",
-            orderId: orderId,
-            parentTabId: message.parentTabId,
-          });
+        const text = alreadyInvited.textContent;
+        if (text === "您已请求对此订单进行评论。") {
+          console.log("订单已邀请过");
+          sendMessage("invitedSuccessfully", orderId, message.parentTabId);
+        } else if (text.includes("5-30天范围")) {
+          console.log("订单不在邀请日期范围内");
+          sendMessage("outOfRange", orderId, message.parentTabId);
+        } else {
+          console.warn("未知错误:", text);
+          sendMessage("invitedFail", orderId, message.parentTabId);
         }
-        break;
+        return;
       }
 
-      //不能邀请（请单击此处重试）
-      disabledStateRetryText = document.querySelector(
-        ".disabled-state-retry-text"
-      );
-      if(disabledStateRetryText){
-        let textContent = disabledStateRetryText.textContent
-        if(textContent == "请单击此处重试"){
-          //todo 暂时给范围外的标识
-          chrome.runtime.sendMessage({
-            action: "outOfRange",
-            orderId: orderId,
-            parentTabId: message.parentTabId,
-          });
-        }
-        break;
+      // 方法3: 检查是否禁用状态（需要重试）
+      const disabledText = await waitForElement(
+        ".disabled-state-retry-text",
+        5000
+      ).catch(() => null);
+
+      if (disabledText?.textContent === "请单击此处重试") {
+        console.log("当前无法邀请，需要重试");
+        sendMessage("outOfRange", orderId, message.parentTabId);
+        return;
       }
 
-      
+      // 未知错误
+      console.error("邀请失败：无法检测到预期的页面状态");
+      sendMessage("invitedFail", orderId, message.parentTabId);
 
-      await sleep(500);
+    } catch (error) {
+      console.error("邀请过程发生异常:", error);
+      sendMessage("invitedFail", orderId, message.parentTabId);
     }
   }
 });
@@ -115,4 +89,84 @@ function getParameterByName(name, url) {
 // 定义一个 sleep 函数，接受一个延迟时间（以毫秒为单位）作为参数
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * 等待元素出现
+ * @param {string} selector - CSS选择器
+ * @param {number} timeout - 超时时间（毫秒）
+ * @returns {Promise<HTMLElement>}
+ */
+function waitForElement(selector, timeout = 30000) {
+  return new Promise((resolve, reject) => {
+    const startTime = Date.now();
+
+    const check = () => {
+      const element = document.querySelector(selector);
+      if (element) {
+        resolve(element);
+        return;
+      }
+
+      if (Date.now() - startTime < timeout) {
+        setTimeout(check, 500);
+      } else {
+        reject(new Error(`元素未找到（超时${timeout}ms）: ${selector}`));
+      }
+    };
+
+    check();
+  });
+}
+
+/**
+ * 等待多个选择器中的任意一个出现
+ * @param {string[]} selectors - CSS选择器数组
+ * @param {number} timeout - 超时时间（毫秒）
+ * @returns {Promise<{element: HTMLElement, selector: string}>}
+ */
+function waitForAnyElement(selectors, timeout = 30000) {
+  return new Promise((resolve, reject) => {
+    const startTime = Date.now();
+
+    const check = () => {
+      for (const selector of selectors) {
+        const element = document.querySelector(selector);
+        if (element) {
+          resolve({ element, selector });
+          return;
+        }
+      }
+
+      if (Date.now() - startTime < timeout) {
+        setTimeout(check, 500);
+      } else {
+        reject(
+          new Error(
+            `元素未找到（超时${timeout}ms），已尝试的选择器: ${selectors.join(', ')}`
+          )
+        );
+      }
+    };
+
+    check();
+  });
+}
+
+/**
+ * 发送消息到父标签页
+ * @param {string} action - 动作名称
+ * @param {string} orderId - 订单ID
+ * @param {number} parentTabId - 父标签页ID
+ */
+function sendMessage(action, orderId, parentTabId) {
+  chrome.runtime
+    .sendMessage({
+      action: action,
+      orderId: orderId,
+      parentTabId: parentTabId,
+    })
+    .catch((error) => {
+      console.error(`发送消息失败 (${action}):`, error);
+    });
 }
