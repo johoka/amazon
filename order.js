@@ -1,7 +1,11 @@
 let orderLinks = [];
+//需要邀请的订单，通过接口获取的数据，排除了不需要邀请的订单
 let orderIds = [];
+//当前页所有订单，通过遍历页面元素获取的数据，包含不需要邀请的订单
 let orderMap = new Map();
+//当前页已经邀请的订单
 let invitedOrderIds = new Set();
+//当前页不需要邀请的订单
 let noInviteOrderIds = new Set();
 
 let subTabNum = 0;
@@ -15,7 +19,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       while (!requestAReviewLink && loopCount < 30) {
         loopCount = loopCount + 1;
         requestAReviewLink = document.querySelector(
-          '[data-test-id="plugin-button-requestAReview"] a'
+          '[data-test-id="plugin-button-requestAReview"] a',
         );
         if (requestAReviewLink) {
           var href = requestAReviewLink.getAttribute("href");
@@ -123,12 +127,12 @@ window.onload = function () {
             finalinvitedOrderIdSet.add(orderId);
           }
           console.log(
-            `当前页需要总数：${orderMap.size}，不邀请数量：${noInviteOrderIds.size}`
+            `当前页需要总数：${orderMap.size}，不邀请数量：${noInviteOrderIds.size}`,
           );
           //当前页需要邀请数量=当前页单号数量-不需要邀请数量
           let needInviteOrderIdSize = orderMap.size - noInviteOrderIds.size;
           console.log(
-            `当前页需要邀请数量：${needInviteOrderIdSize}，已经邀请数量：${invitedOrderIds.size}`
+            `当前页需要邀请数量：${needInviteOrderIdSize}，已经邀请数量：${invitedOrderIds.size}`,
           );
           //todo 次数直接用  orderMap.size可能比较合适
           if (
@@ -153,7 +157,6 @@ window.onload = function () {
             !orderId &&
             needInviteOrderIdSize == invitedOrderIds.size
           ) {
-            //todo 此处有问题，当某一页邀请一部分后，刷新页面重新邀请时，invitedOrderIds初始化为档期那也已经邀请部分，当finalinvItedOrderIdSet递增到等于已经邀请数量时，直接跳到下一页
             //下一页
             nextPageAction(inviteCommentButton);
             break;
@@ -168,7 +171,7 @@ window.onload = function () {
             while (loopCount < maxLoopCount) {
               loopCount++;
               if (loopCount == maxLoopCount - 1) {
-                //循环了多次，但是subTabNum一直不小于3，此时将subTabNum设置为0
+                //循环了多次，但是subTabNum一直不小于maxTabs，此时将subTabNum设置为0
                 subTabNum = 0;
               }
               if (subTabNum < maxTabs) {
@@ -184,7 +187,7 @@ window.onload = function () {
                   },
                   function (response) {
                     console.log("Response:", response);
-                  }
+                  },
                 );
                 subTabNum++;
                 //每隔200毫秒打开一个窗口
@@ -373,7 +376,8 @@ window.addEventListener("message", async function (e) {
   if (data.type === "limit") {
     let limit = data.data;
     if (limit <= 15) {
-      //当前页第一次请求订单明细，清空邀请状态
+      //订单明细：每次翻页时，都会触发第一次为15条数据的请求
+      //当检测到获取到15条数据明细时，认为翻页，清空当前页的相关变量
       invitedOrderIds = new Set();
       orderIds = [];
       noInviteAmazonOrderIds = new Set();
@@ -443,7 +447,7 @@ function nextPageAction(inviteCommentButton) {
       while (true) {
         //等待有刷新按钮出来后再触发邀请按钮
         let refreshButton = document.querySelector(
-          "#myo-sorting-bar span[data-test-id='refresh-button'] input"
+          "#myo-sorting-bar span[data-test-id='refresh-button'] input",
         );
         if (refreshButton && orderIds.length > 0) {
           //存在刷新按钮，说明下一页已经加载完毕,触发邀请按钮
@@ -463,7 +467,7 @@ function nextPageAction(inviteCommentButton) {
 function refreshButton() {
   //等待有刷新按钮出来后再触发邀请按钮
   let refreshButton = document.querySelector(
-    "#myo-sorting-bar span[data-test-id='refresh-button'] input"
+    "#myo-sorting-bar span[data-test-id='refresh-button'] input",
   );
   if (refreshButton) {
     //存在刷新按钮，说明下一页已经加载完毕,触发邀请按钮
